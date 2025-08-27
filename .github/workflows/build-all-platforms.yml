@@ -101,26 +101,70 @@ jobs:
         echo "macOS cross-compilation tools are available by default"
 
     - name: Build for ${{ matrix.goos }} ${{ matrix.goarch }}
+      shell: bash
       run: |
+        echo "Starting build for ${{ matrix.goos }} ${{ matrix.goarch }} version ${{ github.event.inputs.version }}"
+        echo "Current directory: $(pwd)"
+        echo "Directory contents:"
+        ls -la
+        
+        # Make build script executable
         chmod +x scripts/build.sh
-        ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.event.inputs.version }}"
+        
+        # Run build script with error handling
+        echo "Running build script..."
+        if ! ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.event.inputs.version }}"; then
+          echo "Build script failed with exit code $?"
+          echo "Checking if scripts directory exists:"
+          if [ -d "scripts" ]; then
+            echo "Scripts directory contents:"
+            ls -la scripts/
+          else
+            echo "Scripts directory does not exist"
+          fi
+          exit 1
+        fi
+        
+        echo "Build script completed successfully"
         
     - name: Check build output
       shell: bash
       run: |
         echo "Checking if build directory exists..."
-        ls -la bin/
-        if [ -d "bin/${{ github.event.inputs.version }}" ]; then
-          echo "Build directory exists:"
-          ls -la "bin/${{ github.event.inputs.version }}/"
-        else
-          echo "Build directory does not exist, checking if bin directory exists at all"
-          if [ -d "bin" ]; then
-            echo "bin directory contents:"
-            ls -la bin/
+        echo "Current directory: $(pwd)"
+        
+        if [ -d "bin" ]; then
+          echo "bin directory exists, contents:"
+          ls -la bin/
+          
+          if [ -d "bin/${{ github.event.inputs.version }}" ]; then
+            echo "Build directory exists, contents:"
+            ls -la "bin/${{ github.event.inputs.version }}/"
+            
+            # Check if the expected executable file exists
+            EXPECTED_FILE="codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.event.inputs.version }}"
+            if [ "${{ matrix.goos }}" = "windows" ]; then
+              EXPECTED_FILE="${EXPECTED_FILE}.exe"
+            fi
+            
+            if [ -f "bin/${{ github.event.inputs.version }}/$EXPECTED_FILE" ]; then
+              echo "Expected executable file exists: $EXPECTED_FILE"
+              echo "File details:"
+              ls -la "bin/${{ github.event.inputs.version }}/$EXPECTED_FILE"
+            else
+              echo "Expected executable file does not exist: $EXPECTED_FILE"
+              echo "Available files in build directory:"
+              ls -la "bin/${{ github.event.inputs.version }}/"
+              exit 1
+            fi
           else
-            echo "bin directory does not exist"
+            echo "Build directory does not exist: bin/${{ github.event.inputs.version }}"
+            exit 1
           fi
+        else
+          echo "bin directory does not exist"
+          echo "Current directory contents:"
+          ls -la
           exit 1
         fi
 
