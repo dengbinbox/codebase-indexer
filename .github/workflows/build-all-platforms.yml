@@ -106,6 +106,7 @@ jobs:
         ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.event.inputs.version }}"
 
     - name: Package
+      shell: bash
       run: |
         # 确定输出文件名
         OUTPUT_FILENAME="codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.event.inputs.version }}"
@@ -117,7 +118,12 @@ jobs:
         if [ "${{ matrix.goos }}" = "windows" ]; then
           # Windows 使用 zip 格式
           cd "bin/${{ github.event.inputs.version }}"
-          7z a "${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.zip" "$OUTPUT_FILENAME"
+          if command -v zip >/dev/null 2>&1; then
+            zip "${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.zip" "$OUTPUT_FILENAME"
+          else
+            # 如果没有 zip 命令，使用 PowerShell
+            powershell -Command "Compress-Archive -Path '$OUTPUT_FILENAME' -DestinationPath '${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.zip'"
+          fi
         else
           # Linux 和 macOS 使用 tar.gz 格式
           cd "bin/${{ github.event.inputs.version }}"
