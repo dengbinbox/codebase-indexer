@@ -106,6 +106,7 @@ jobs:
         ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.event.inputs.version }}"
         
     - name: Check build output
+      shell: bash
       run: |
         echo "Checking if build directory exists..."
         ls -la bin/
@@ -123,36 +124,10 @@ jobs:
           exit 1
         fi
 
-    - name: Package
-      shell: bash
-      run: |
-        # 确定输出文件名
-        OUTPUT_FILENAME="codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.event.inputs.version }}"
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          OUTPUT_FILENAME="${OUTPUT_FILENAME}.exe"
-        fi
-        
-        # 创建压缩包
-        if [ "${{ matrix.goos }}" = "windows" ]; then
-          # Windows 使用 zip 格式
-          cd "bin/${{ github.event.inputs.version }}"
-          if command -v zip >/dev/null 2>&1; then
-            zip "${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.zip" "$OUTPUT_FILENAME"
-          else
-            # 如果没有 zip 命令，使用 PowerShell
-            powershell -Command "Compress-Archive -Path '$OUTPUT_FILENAME' -DestinationPath '${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.zip'"
-          fi
-        else
-          # Linux 和 macOS 使用 tar.gz 格式
-          cd "bin/${{ github.event.inputs.version }}"
-          tar -czf "${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.tar.gz" "$OUTPUT_FILENAME"
-        fi
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}-${{ github.event.inputs.version }}
         path: |
-          bin/${{ github.event.inputs.version }}/${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.zip
-          bin/${{ github.event.inputs.version }}/${{ matrix.artifact_name }}-${{ github.event.inputs.version }}.tar.gz
+          bin/${{ github.event.inputs.version }}/codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.event.inputs.version }}*
         retention-days: 30
