@@ -104,6 +104,24 @@ jobs:
       run: |
         chmod +x scripts/build.sh
         ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.event.inputs.version }}"
+        
+    - name: Check build output
+      run: |
+        echo "Checking if build directory exists..."
+        ls -la bin/
+        if [ -d "bin/${{ github.event.inputs.version }}" ]; then
+          echo "Build directory exists:"
+          ls -la "bin/${{ github.event.inputs.version }}/"
+        else
+          echo "Build directory does not exist, checking if bin directory exists at all"
+          if [ -d "bin" ]; then
+            echo "bin directory contents:"
+            ls -la bin/
+          else
+            echo "bin directory does not exist"
+          fi
+          exit 1
+        fi
 
     - name: Package
       shell: bash
