@@ -72,17 +72,25 @@ jobs:
         go-version: '1.24.4'
 
     - name: Install cross-compilation dependencies (Linux)
-      if: matrix.goos == 'linux'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+        sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-multilib
 
     - name: Install cross-compilation dependencies (Windows)
-      if: matrix.goos == 'windows'
+      if: matrix.os == 'windows-latest'
       run: |
-        # Install MinGW-w64 for Windows cross-compilation
-        sudo apt-get update
-        sudo apt-get install -y gcc-mingw-w64-x86-64 gcc-mingw-w64-i686 gcc-mingw-w64-aarch64
+        # Windows already has MinGW-w64 installed by default
+        # Just verify the compilers are available
+        gcc --version
+        echo "Windows cross-compilation tools are available by default"
+
+    - name: Install cross-compilation dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # macOS cross-compilation tools are available by default
+        clang --version
+        echo "macOS cross-compilation tools are available by default"
 
     - name: Build for ${{ matrix.goos }} ${{ matrix.goarch }}
       run: |
