@@ -12,6 +12,7 @@ jobs:
   build:
     # 使用矩阵策略来定义不同的操作系统和架构组合
     strategy:
+      fail-fast: false
       matrix:
         include:
           # Linux amd64
@@ -75,7 +76,14 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install -y musl-tools gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf gcc-multilib
+        # Install base tools first
+        sudo apt-get install -y musl-tools
+        # Install cross-compilation tools without multilib conflicts
+        sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+        # Install multilib support separately if needed for 386 architecture
+        if [ "${{ matrix.goarch }}" == "386" ]; then
+          sudo apt-get install -y gcc-multilib
+        fi
 
     - name: Install cross-compilation dependencies (Windows)
       if: matrix.os == 'windows-latest'
