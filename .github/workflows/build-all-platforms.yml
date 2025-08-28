@@ -162,7 +162,7 @@ jobs:
           
           if [ -d "bin/${{ github.ref_name }}" ]; then
             echo "Build directory exists, contents:"
-            ls -la "bin/${{ github.event.inputs.version }}/"
+            ls -la "bin/${{ github.ref_name }}/"
             
             # Check if the expected executable file exists
             EXPECTED_FILE="codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}"
@@ -173,7 +173,7 @@ jobs:
             if [ -f "bin/${{ github.ref_name }}/$EXPECTED_FILE" ]; then
               echo "Expected executable file exists: $EXPECTED_FILE"
               echo "File details:"
-              ls -la "bin/${{ github.event.inputs.version }}/$EXPECTED_FILE"
+              ls -la "bin/${{ github.ref_name }}/$EXPECTED_FILE"
             else
               echo "Expected executable file does not exist: $EXPECTED_FILE"
               echo "Available files in build directory:"
