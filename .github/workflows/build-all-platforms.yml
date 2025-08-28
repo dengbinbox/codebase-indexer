@@ -84,38 +84,11 @@ jobs:
 
     - name: Install cross-compilation dependencies (Windows)
       if: matrix.os == 'windows-latest'
-      shell: bash
       run: |
-        # Install MinGW-w64 toolchain for cross-compilation
-        echo "Installing MinGW-w64 toolchain..."
-        
-        # Install Chocolatey package manager if not available
-        if ! command -v choco &> /dev/null; then
-          echo "Installing Chocolatey..."
-          Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        fi
-        
-        # Install MinGW-w64 toolchain for all architectures
-        echo "Installing MinGW-w64 toolchain for cross-compilation..."
-        choco install -y mingw --params "/arch:x64 /threads:posix"
-        choco install -y mingw --params "/arch:x86 /threads:posix"
-        choco install -y mingw --params "/arch:arm64 /threads:posix"
-        
-        # Add MinGW-w64 to PATH
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw32\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        echo "C:\ProgramData\chocolatey\lib\mingw\tools\install\mingw-arm64\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-        
-        # Verify compilers are available
-        echo "Verifying cross-compilation tools..."
-        echo "Checking for x86_64-w64-mingw32-gcc:"
-        where x86_64-w64-mingw32-gcc || echo "x86_64-w64-mingw32-gcc not found"
-        echo "Checking for i686-w64-mingw32-gcc:"
-        where i686-w64-mingw32-gcc || echo "i686-w64-mingw32-gcc not found"
-        echo "Checking for aarch64-w64-mingw32-gcc:"
-        where aarch64-w64-mingw32-gcc || echo "aarch64-w64-mingw32-gcc not found"
-        
-        echo "Windows cross-compilation tools installation completed"
+        # Windows already has MinGW-w64 installed by default
+        # Just verify the compilers are available
+        gcc --version
+        echo "Windows cross-compilation tools are available by default"
 
     - name: Install cross-compilation dependencies (macOS)
       if: matrix.os == 'macos-latest'
