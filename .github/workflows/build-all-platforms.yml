@@ -1,12 +1,9 @@
 name: Build and Package All Platforms
 
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version string for the build (e.g., 1.0.0, 1.0.0_beta)'
-        required: true
-        type: string
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
@@ -40,16 +37,16 @@ jobs:
             goos: windows
             goarch: amd64
             artifact_name: codebase-indexer-windows-amd64
-          # Windows 386
-          - os: windows-latest
-            goos: windows
-            goarch: 386
-            artifact_name: codebase-indexer-windows-386
-          # Windows arm64
-          - os: windows-latest
-            goos: windows
-            goarch: arm64
-            artifact_name: codebase-indexer-windows-arm64
+          # Windows 386 - temporarily disabled
+          # - os: windows-latest
+          #   goos: windows
+          #   goarch: 386
+          #   artifact_name: codebase-indexer-windows-386
+          # Windows arm64 - temporarily disabled
+          # - os: windows-latest
+          #   goos: windows
+          #   goarch: arm64
+          #   artifact_name: codebase-indexer-windows-arm64
           # macOS amd64
           - os: macos-latest
             goos: darwin
@@ -129,7 +126,7 @@ jobs:
     - name: Build for ${{ matrix.goos }} ${{ matrix.goarch }}
       shell: bash
       run: |
-        echo "Starting build for ${{ matrix.goos }} ${{ matrix.goarch }} version ${{ github.event.inputs.version }}"
+        echo "Starting build for ${{ matrix.goos }} ${{ matrix.goarch }} version ${{ github.ref_name }}"
         echo "Current directory: $(pwd)"
         echo "Directory contents:"
         ls -la
@@ -139,7 +136,7 @@ jobs:
         
         # Run build script with error handling
         echo "Running build script..."
-        if ! ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.event.inputs.version }}"; then
+        if ! ./scripts/build.sh "${{ matrix.goos }}" "${{ matrix.goarch }}" "${{ github.ref_name }}"; then
           echo "Build script failed with exit code $?"
           echo "Checking if scripts directory exists:"
           if [ -d "scripts" ]; then
@@ -163,28 +160,28 @@ jobs:
           echo "bin directory exists, contents:"
           ls -la bin/
           
-          if [ -d "bin/${{ github.event.inputs.version }}" ]; then
+          if [ -d "bin/${{ github.ref_name }}" ]; then
             echo "Build directory exists, contents:"
             ls -la "bin/${{ github.event.inputs.version }}/"
             
             # Check if the expected executable file exists
-            EXPECTED_FILE="codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.event.inputs.version }}"
+            EXPECTED_FILE="codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}"
             if [ "${{ matrix.goos }}" = "windows" ]; then
               EXPECTED_FILE="${EXPECTED_FILE}.exe"
             fi
             
-            if [ -f "bin/${{ github.event.inputs.version }}/$EXPECTED_FILE" ]; then
+            if [ -f "bin/${{ github.ref_name }}/$EXPECTED_FILE" ]; then
               echo "Expected executable file exists: $EXPECTED_FILE"
               echo "File details:"
               ls -la "bin/${{ github.event.inputs.version }}/$EXPECTED_FILE"
             else
               echo "Expected executable file does not exist: $EXPECTED_FILE"
               echo "Available files in build directory:"
-              ls -la "bin/${{ github.event.inputs.version }}/"
+              ls -la "bin/${{ github.ref_name }}/"
               exit 1
             fi
           else
-            echo "Build directory does not exist: bin/${{ github.event.inputs.version }}"
+            echo "Build directory does not exist: bin/${{ github.ref_name }}"
             exit 1
           fi
         else
@@ -197,7 +194,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.artifact_name }}-${{ github.event.inputs.version }}
+        name: ${{ matrix.artifact_name }}-${{ github.ref_name }}
         path: |
-          bin/${{ github.event.inputs.version }}/codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.event.inputs.version }}*
+          bin/${{ github.ref_name }}/codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}*
         retention-days: 30
