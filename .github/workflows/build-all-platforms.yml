@@ -84,6 +84,7 @@ jobs:
 
     - name: Install cross-compilation dependencies (Windows)
       if: matrix.os == 'windows-latest'
+      shell: bash
       run: |
         # Install MinGW-w64 toolchain for cross-compilation
         echo "Installing MinGW-w64 toolchain..."
@@ -198,3 +199,51 @@ jobs:
         path: |
           bin/${{ github.ref_name }}/codebase-indexer-${{ matrix.goos }}-${{ matrix.goarch }}-${{ github.ref_name }}*
         retention-days: 30
+
+  upload-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        
+    - name: Prepare release assets
+      run: |
+        mkdir -p release-assets
+        find artifacts -name "codebase-indexer-*" -type f | while read file; do
+          cp "$file" release-assets/
+        done
+        ls -la release-assets/
+        
+    - name: Create Release and Upload Assets
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
+        body: |
+          Codebase Indexer ${{ github.ref_name }}
+          
+          ## 构建信息
+          - 版本: ${{ github.ref_name }}
+          - 构建时间: ${{ github.event.created_at }}
+          
+          ## 下载说明
+          请根据您的操作系统和架构选择对应的二进制文件：
+          
+          - Linux: `codebase-indexer-linux-*`
+          - Windows: `codebase-indexer-windows-*.exe`
+          - macOS: `codebase-indexer-darwin-*`
+          
+          ## 支持的平台和架构
+          - Linux amd64, arm64, 386, arm
+          - Windows amd64
+          - macOS amd64, arm64
+        files: release-assets/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
